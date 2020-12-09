@@ -24,8 +24,8 @@ def main():
 
     load_script(args.file)
 
-    fs = FileSystem()
     for target in args.targets:
+        fs = FileSystem()
         Executor(fs, TASKS).execute(target)
 
 
