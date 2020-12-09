@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install -r test-requirements.txt
+      - run: python -m pytest
+
+  style:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install flake8
+
+      - run: flake8

@@ -17,7 +17,7 @@ def process_sources(target, sources, args):
             if generated:
                 result.extend(generated)
         else:
-            raise Exception("Unknow source:", source)
+            raise Exception("Unknown source:", source)
 
     return result
 
@@ -48,9 +48,15 @@ class RegularExpressionMatcher:
 class PercentPatternMatcher(RegularExpressionMatcher):
     def __init__(self, target, sources):
         super().__init__(
-            escape_target(target, lambda t: re.escape(t).replace("%", "(.*?)")),
+            escape_target(target, self.translate_target),
             escape_sources(sources, lambda s: escape_format_str(s).replace("%", "{}")),
         )
+
+    @staticmethod
+    def translate_target(target):
+        # In some Python versions, re.escape will convert `%` into `\%`,
+        # while in other version, '%' will be kept unchanged
+        return re.escape(target).replace("\\%", "(.*?)").replace("%", "(.*?)")
 
 
 class PlainTextMatcher(RegularExpressionMatcher):
