@@ -95,12 +95,9 @@ class Executor:
             finally:
                 job_queue.task_done()
 
-    def execute(self, targets):
+    def execute(self, target):
         queue = []
-
-        for target in targets:
-            self.resolve(queue, target)
-
+        self.resolve(queue, target)
         queue = self.queue_deduplication(queue)
 
         job_queue = Queue()

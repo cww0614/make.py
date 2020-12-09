@@ -68,7 +68,7 @@ def test_recompile(fs_config):
     tasks, compiled, linked = fake_compile_tasks()
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["test.o"])
+    executor.execute("test.o")
 
     assert compiled == [("test.o", ["test.c"])]
     assert linked == []
@@ -79,7 +79,7 @@ def test_dont_recompile():
     tasks, compiled, linked = fake_compile_tasks()
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["test.o"])
+    executor.execute("test.o")
 
     assert compiled == []
     assert linked == []
@@ -110,7 +110,7 @@ def test_relink(fs_config):
     tasks, compiled, linked = fake_compile_tasks()
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["binary"])
+    executor.execute("binary")
 
     assert compiled == [("test0.o", ["test0.c"]), ("test1.o", ["test1.c"])]
     assert linked == [("binary", ["test0.o", "test1.o"])]
@@ -157,7 +157,7 @@ def test_partial_relink(fs_config, expected_compiled):
     tasks, compiled, linked = fake_compile_tasks()
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["binary"])
+    executor.execute("binary")
 
     assert compiled == expected_compiled
     assert linked == [("binary", ["test0.o", "test1.o"])]
@@ -194,7 +194,7 @@ def test_dont_relink(fs_config, target):
     tasks, compiled, linked = fake_compile_tasks()
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute([target])
+    executor.execute(target)
 
     assert compiled == []
     assert linked == []
@@ -222,7 +222,7 @@ def test_task_deduplication():
     fs = TestFileSystem({"a": 100})
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["d"])
+    executor.execute("d")
 
     assert sorted(compiled_files) == [("b", ["a"]), ("c", ["b"]), ("d", ["b", "c"])]
 
@@ -245,7 +245,7 @@ def test_run_phony_task():
     fs = TestFileSystem({})
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["clean"])
+    executor.execute("clean")
 
     assert run
 
@@ -287,7 +287,7 @@ def test_phony_task_with_recorded_timestamp(fs_config, expected):
     fs = TestFileSystem(fs_config)
 
     executor = Executor(fs, tasks, silent=True)
-    executor.execute(["clean"])
+    executor.execute("clean")
 
     assert run == expected
 
@@ -296,4 +296,4 @@ def test_error_for_unknown_task():
     fs = TestFileSystem({})
     executor = Executor(fs, [], silent=True)
     with pytest.raises(Exception):
-        executor.execute(["all"])
+        executor.execute("all")

@@ -25,7 +25,8 @@ def main():
     load_script(args.file)
 
     fs = FileSystem()
-    Executor(fs, TASKS).execute(args.targets)
+    for target in args.targets:
+        Executor(fs, TASKS).execute(target)
 
 
 if __name__ == "__main__":
