@@ -11,7 +11,7 @@ setuptools.setup(
     version="0.0.1",
     author="Yifei Wang",
     author_email="yifei529@gmail.com",
-    description="A Make alternative in Python",
+    description="A make equivalent in Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/cww0614/make.py",

@@ -30,4 +30,4 @@ def link(ctx):
 
 @task()
 def clean(ctx):
-    rmtree("build", ignore_errors=True)
+    rmtree(OUTPUT, ignore_errors=True)
