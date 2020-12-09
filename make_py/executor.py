@@ -1,11 +1,16 @@
 import sys
+from queue import Queue
+from threading import Thread
 
 
 class Executor:
-    def __init__(self, fs, tasks, silent=False):
+    def __init__(self, fs, tasks, jobs=1, silent=False):
         self.tasks = tasks
         self.fs = fs
         self.silent = silent
+        self.jobs = jobs
+
+        self.cancelled = False
 
     def resolve(self, queue, target):
         timestamp = self.fs.get_timestamp(target)
@@ -74,6 +79,22 @@ class Executor:
                 )
             )
 
+    def worker(self, job_queue):
+        while not self.cancelled and not job_queue.empty():
+            i, n, task, ctx = job_queue.get()
+            self.print_task(task, ctx, i, n)
+
+            try:
+                if not task.phony:
+                    self.fs.make_parents(ctx.target)
+
+                task.run(ctx)
+            except Exception as e:
+                self.cancelled = True
+                raise e
+            finally:
+                job_queue.task_done()
+
     def execute(self, targets):
         queue = []
 
@@ -82,11 +103,19 @@ class Executor:
 
         queue = self.queue_deduplication(queue)
 
+        job_queue = Queue()
+
+        self.cancelled = False
         n = len(queue)
         for i, (task, ctx) in enumerate(queue):
-            self.print_task(task, ctx, i, n)
+            job_queue.put((i, n, task, ctx))
 
-            if not task.phony:
-                self.fs.make_parents(ctx.target)
+        threads = [
+            Thread(target=self.worker, args=(job_queue,)) for _ in range(self.jobs)
+        ]
 
-            task.run(ctx)
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
