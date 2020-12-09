@@ -16,7 +16,7 @@ def load_script(path):
 
 def main():
     arg_parser = ArgumentParser()
-    arg_parser.add_argument("-j", "--jobs", default=1)
+    arg_parser.add_argument("-j", "--jobs", type=int, default=1)
     arg_parser.add_argument("-f", "--file", default="Makefile.py")
     arg_parser.add_argument("targets", nargs="*", default=["all"])
 
@@ -26,7 +26,7 @@ def main():
 
     for target in args.targets:
         fs = FileSystem()
-        Executor(fs, TASKS).execute(target)
+        Executor(fs, TASKS, jobs=args.jobs).execute(target)
 
 
 if __name__ == "__main__":
