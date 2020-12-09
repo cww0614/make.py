@@ -2,7 +2,7 @@ import importlib.util
 import sys
 from argparse import ArgumentParser
 
-from .executor import Executor
+from .executor import Executor, JobPool
 from .filesystem import FileSystem
 from .task import TASKS
 
@@ -26,7 +26,8 @@ def main():
 
     for target in args.targets:
         fs = FileSystem()
-        Executor(fs, TASKS, jobs=args.jobs).execute(target)
+        job_pool = JobPool()
+        Executor(fs, job_pool, TASKS, jobs=args.jobs).execute(target)
 
 
 if __name__ == "__main__":

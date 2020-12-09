@@ -1,7 +1,12 @@
+from time import sleep
+
 import pytest
 
-from make_py.executor import Executor
-from make_py.matcher import RegularExpressionMatcher, PlainTextMatcher
+from make_py.executor import Executor, JobPool
+from make_py.matcher import (
+    RegularExpressionMatcher,
+    PlainTextMatcher,
+)
 from make_py.task import Task
 
 
@@ -27,6 +32,10 @@ class TestFileSystem:
 
 
 TestFileSystem.__test__ = False
+
+
+def create_test_executor(fs, tasks, jobs=1):
+    return Executor(fs, JobPool(), tasks, silent=True, jobs=jobs)
 
 
 def fake_compile_tasks():
@@ -67,7 +76,7 @@ def test_recompile(fs_config):
     fs = TestFileSystem(fs_config)
     tasks, compiled, linked = fake_compile_tasks()
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("test.o")
 
     assert compiled == [("test.o", ["test.c"])]
@@ -78,7 +87,7 @@ def test_dont_recompile():
     fs = TestFileSystem({"test.c": 100, "test.o": 110})
     tasks, compiled, linked = fake_compile_tasks()
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("test.o")
 
     assert compiled == []
@@ -109,7 +118,7 @@ def test_relink(fs_config):
 
     tasks, compiled, linked = fake_compile_tasks()
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("binary")
 
     assert compiled == [("test0.o", ["test0.c"]), ("test1.o", ["test1.c"])]
@@ -156,7 +165,7 @@ def test_partial_relink(fs_config, expected_compiled):
 
     tasks, compiled, linked = fake_compile_tasks()
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("binary")
 
     assert compiled == expected_compiled
@@ -193,7 +202,7 @@ def test_dont_relink(fs_config, target):
 
     tasks, compiled, linked = fake_compile_tasks()
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute(target)
 
     assert compiled == []
@@ -221,7 +230,7 @@ def test_task_deduplication():
 
     fs = TestFileSystem({"a": 100})
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("d")
 
     assert sorted(compiled_files) == [("b", ["a"]), ("c", ["b"]), ("d", ["b", "c"])]
@@ -244,7 +253,7 @@ def test_run_phony_task():
 
     fs = TestFileSystem({})
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("clean")
 
     assert run
@@ -286,7 +295,7 @@ def test_phony_task_with_recorded_timestamp(fs_config, expected):
 
     fs = TestFileSystem(fs_config)
 
-    executor = Executor(fs, tasks, silent=True)
+    executor = create_test_executor(fs, tasks)
     executor.execute("clean")
 
     assert run == expected
@@ -294,6 +303,40 @@ def test_phony_task_with_recorded_timestamp(fs_config, expected):
 
 def test_error_for_unknown_task():
     fs = TestFileSystem({})
-    executor = Executor(fs, [], silent=True)
+    executor = create_test_executor(fs, [])
     with pytest.raises(Exception):
         executor.execute("all")
+
+
+def test_order():
+    finished = False
+    link_after_compile_finished = False
+
+    def compile(ctx):
+        nonlocal finished
+        sleep(1)
+        finished = True
+
+    def link(ctx):
+        nonlocal link_after_compile_finished
+        link_after_compile_finished = finished
+
+    tasks = [
+        Task(
+            matcher=PlainTextMatcher(target="compile", sources=[]),
+            handler=compile,
+            phony=True,
+        ),
+        Task(
+            matcher=PlainTextMatcher(target="link", sources=["compile"]),
+            handler=link,
+            phony=True,
+        ),
+    ]
+
+    fs = TestFileSystem({})
+
+    executor = create_test_executor(fs, tasks, jobs=4)
+    executor.execute("link")
+
+    assert link_after_compile_finished
