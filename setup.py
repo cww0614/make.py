@@ -8,7 +8,7 @@ long_description = (HERE / "README.md").read_text()
 
 setuptools.setup(
     name="make_py",
-    version="0.0.1",
+    version="0.1.0",
     author="Yifei Wang",
     author_email="yifei529@gmail.com",
     description="A make equivalent in Python",
