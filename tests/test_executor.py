@@ -6,6 +6,7 @@ from make_py.executor import Executor, JobPool
 from make_py.matcher import (
     RegularExpressionMatcher,
     PlainTextMatcher,
+    PercentPatternMatcher,
 )
 from make_py.task import Task
 
@@ -308,6 +309,46 @@ def test_error_for_unknown_task():
         executor.execute("all")
 
 
+def test_parallelization():
+    task1_running = False
+    task2_running = False
+
+    def task1(ctx):
+        nonlocal task1_running, task2_running
+        task1_running = True
+        while not task2_running:
+            sleep(0.1)
+
+    def task2(ctx):
+        nonlocal task1_running, task2_running
+        task2_running = True
+        while not task2_running:
+            sleep(0.1)
+
+    tasks = [
+        Task(
+            matcher=PlainTextMatcher(target="task1", sources=[]),
+            handler=task1,
+            phony=True,
+        ),
+        Task(
+            matcher=PlainTextMatcher(target="task2", sources=[]),
+            handler=task2,
+            phony=True,
+        ),
+        Task(
+            matcher=PlainTextMatcher(target="all", sources=["task1", "task2"]),
+            handler=lambda _: None,
+            phony=True,
+        ),
+    ]
+
+    fs = TestFileSystem({})
+
+    executor = create_test_executor(fs, tasks, jobs=2)
+    executor.execute("all")
+
+
 def test_order():
     finished = False
     link_after_compile_finished = False
@@ -340,3 +381,53 @@ def test_order():
     executor.execute("link")
 
     assert link_after_compile_finished
+
+
+def test_failure_task():
+    task1_executed = 0
+    task2_executed = 0
+
+    def task1(ctx):
+        nonlocal task1_executed
+        sleep(1)
+        task1_executed += 1
+
+    def task2(ctx):
+        nonlocal task2_executed
+        task2_executed += 1
+        raise Exception("Exception on purpose")
+
+    tasks = [
+        Task(
+            matcher=PercentPatternMatcher(target="task1%", sources=[]),
+            handler=task1,
+            phony=True,
+        ),
+        Task(
+            matcher=PercentPatternMatcher(target="task2%", sources=[]),
+            handler=task2,
+            phony=True,
+        ),
+        Task(
+            matcher=PlainTextMatcher(
+                target="all",
+                sources=[
+                    "task1_1",
+                    "task2_1",
+                    "task1_2",
+                    "task2_2",
+                    "task1_3",
+                    "task2_3",
+                ],
+            ),
+            handler=lambda _: None,
+            phony=True,
+        ),
+    ]
+
+    fs = TestFileSystem({})
+    executor = create_test_executor(fs, tasks, jobs=2)
+    executor.execute("all")
+
+    assert task1_executed == 1
+    assert task2_executed == 1
