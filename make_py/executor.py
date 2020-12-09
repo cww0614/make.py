@@ -20,7 +20,7 @@ class Executor:
 
             should_run = False
 
-            if task.phony and len(ctx.sources) == 0:
+            if len(ctx.sources) == 0:
                 should_run = True
 
             for source in ctx.sources:
@@ -55,14 +55,15 @@ class Executor:
     def print_task(self, task, ctx, i, n):
         if not self.silent:
             file_list = ", ".join(ctx.sources)
+
+            if len(file_list) == 0:
+                file_list = "[]"
+
             name = ctx.target
 
             if not task.phony:
                 file_list = "{} <= {}".format(ctx.target, file_list)
                 name = task.handler.__name__
-
-            if len(file_list) == 0:
-                file_list = "[]"
 
             print(
                 "[{}/{}] {}: {}".format(
