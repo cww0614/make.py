@@ -2,7 +2,7 @@ from pathlib import Path
 
 import setuptools
 
-HERE = Path(".").parent
+HERE = Path(__file__).parent
 
 long_description = (HERE / "README.md").read_text()
 
