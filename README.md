@@ -44,12 +44,13 @@ OUTPUT = "build"
 phony_task("all", f"{OUTPUT}/main")
 
 
-def collect_c_dependencies(target, args):
+def collect_c_dependencies(target, target_regex_groups):
     dep_file = Path(target).with_suffix(".d")
     if dep_file.exists():
         return dep_file.read_text().split(":")[1].strip().split(" ")
 
 
+# missing parent directories will be made automatically
 @rule(f"{OUTPUT}/%.o", ["%.c", collect_c_dependencies])
 def compile_c(ctx):
     check_call([CC, "-MMD", "-c", ctx.source, "-o", ctx.target])
