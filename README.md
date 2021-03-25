@@ -1,6 +1,6 @@
 # make.py
 
-[![PyPI version](https://badge.fury.io/py/make-py.svg)](https://badge.fury.io/py/make-py)
+[![PyPI](https://img.shields.io/pypi/v/make-py)](https://pypi.org/project/make-py/)
 
 `make.py` is like `make` but with its build configuration written in Python.
 
