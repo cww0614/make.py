@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from .executor import Executor, JobPool
 from .filesystem import FileSystem
 from .task import TASKS
+from .persistence import STORAGE
 
 
 def load_script(path):
@@ -21,13 +22,16 @@ def main():
     arg_parser.add_argument("targets", nargs="*", default=["all"])
 
     args = arg_parser.parse_args()
-
     load_script(args.file)
 
-    for target in args.targets:
-        fs = FileSystem()
-        job_pool = JobPool()
-        Executor(fs, job_pool, TASKS, jobs=args.jobs).execute(target)
+    STORAGE.load()
+    try:
+        for target in args.targets:
+            fs = FileSystem()
+            job_pool = JobPool()
+            Executor(fs, job_pool, TASKS, jobs=args.jobs).execute(target)
+    finally:
+        STORAGE.dump()
 
 
 if __name__ == "__main__":

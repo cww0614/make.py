@@ -48,3 +48,11 @@ def test_file_concat():
 
     run_example("compile_c", ["clean"])
     assert list(Path(".").glob("*.txt")) == []
+
+
+def test_configure():
+    run_example("configure", ["configure"])
+    run_example("configure", ["print_variables"])
+    run_example("configure", ["clean"])
+
+    assert not Path("variables.json").exists()
