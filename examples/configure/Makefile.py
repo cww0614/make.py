@@ -5,7 +5,7 @@ from make_py import phony_task, task, PersistentVariables
 VARIABLES = PersistentVariables("variables.json")
 CC = VARIABLES["CC"]
 
-phony_task("all", "print")
+phony_task("all", "print_variables")
 
 
 @task()
